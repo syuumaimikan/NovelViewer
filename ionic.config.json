@@ -1,0 +1,7 @@
+{
+  "name": "NovelViewer",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "react-vite"
+}
