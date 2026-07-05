@@ -23,6 +23,9 @@ import Tab1 from "./pages/Tab1";
 import Tab2 from "./pages/Tab2";
 import Tab3 from "./pages/Tab3";
 import ReaderPage from "./pages/ReaderPage";
+import NovelDetailPage from "./pages/NovelDetailPage";
+import LibraryDownloadPage from "./pages/LibraryDownloadPage";
+
 /* Core CSS required for Ionic components to work properly */
 import "@ionic/react/css/core.css";
 
@@ -73,7 +76,15 @@ const App: React.FC = () => (
           <Route path="/tab4">
             <Tab4 />
           </Route>
-          <Route path="/reader/:ncode">
+          <Route path="/novel/:ncode">
+            <NovelDetailPage />
+          </Route>
+
+          <Route path="/library/:ncode/download">
+            <LibraryDownloadPage />
+          </Route>
+
+          <Route path="/reader/:ncode/:episodeNo">
             <ReaderPage />
           </Route>
           <Route exact path="/">

@@ -46,3 +46,25 @@
   justify-content: space-between;
   padding: 20px;
 }
+
+.reader-page-buttons {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 24px 28px 90px;
+}
+
+.reader-page-buttons ion-button {
+  flex: 1;
+  --border-radius: 999px;
+}
+
+.allow-selection {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.disable-selection {
+  user-select: none;
+  -webkit-user-select: none;
+}
