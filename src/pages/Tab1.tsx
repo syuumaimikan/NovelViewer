@@ -10,8 +10,8 @@ import {
   IonButton,
   IonIcon,
   IonBadge,
+  useIonViewWillEnter,
 } from "@ionic/react";
-
 import {
   bookOutline,
   cloudDownloadOutline,
@@ -27,6 +27,13 @@ import "./Tab1.css";
 const Tab1: React.FC = () => {
   const [library, setLibrary] = useState<NovelInfo[]>([]);
   const history = useHistory();
+  const loadLibrary = async () => {
+    setLibrary(await getNovels());
+  };
+
+  useIonViewWillEnter(() => {
+    loadLibrary();
+  });
   const removeNovel = async (ncode: string) => {
     const ok = window.confirm("ライブラリから削除しますか？");
 
@@ -35,9 +42,6 @@ const Tab1: React.FC = () => {
     await deleteNovel(ncode);
     setLibrary(await getNovels());
   };
-  useEffect(() => {
-    getNovels().then(setLibrary);
-  }, []);
 
   return (
     <IonPage>
