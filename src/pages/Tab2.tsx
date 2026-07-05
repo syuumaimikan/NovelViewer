@@ -19,6 +19,7 @@ import {
 import { searchOutline, filterOutline, downloadOutline } from "ionicons/icons";
 import { useEffect, useState } from "react";
 import { addToLibrary, addHistory, Novel } from "../data/novelstore";
+import { addNovelToLibrary } from "../data/novelDB";
 import "./Tab2.css";
 
 const Tab2: React.FC = () => {
@@ -67,6 +68,20 @@ const Tab2: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const addLibrary = async (novel: Novel) => {
+    await addNovelToLibrary({
+      ncode: novel.ncode.toLowerCase(),
+      title: novel.title,
+      writer: novel.writer,
+      story: novel.story,
+      general_all_no: novel.general_all_no ?? 1,
+      downloaded: false,
+      lastReadEpisode: 1,
+    });
+
+    setToast("ライブラリに追加しました");
   };
 
   const downloadNovel = (novel: Novel) => {
@@ -129,7 +144,7 @@ const Tab2: React.FC = () => {
               <div className="novel-row" key={novel.ncode}>
                 <div className="rank-number">{index + 1}</div>
 
-                <div className="novel-main" onClick={() => openNovel(novel)}>
+                <div className="novel-main" onClick={() => addLibrary(novel)}>
                   <h2>{novel.title}</h2>
                   <p>
                     {novel.writer}・{getGenreName(novel.genre)}・

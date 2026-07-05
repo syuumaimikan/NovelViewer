@@ -1,0 +1,48 @@
+.reader-page {
+  --background: #1d1311;
+  color: #ead8d3;
+}
+
+.episode-selector {
+  padding: 16px;
+  background: #241917;
+}
+
+.reader-body {
+  padding: 24px;
+  font-size: 18px;
+  line-height: 1.9;
+  white-space: pre-wrap;
+}
+
+.reader-body h1 {
+  font-size: 24px;
+  margin-bottom: 24px;
+}
+
+.reader-body.vertical {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+
+  height: calc(100vh - 170px);
+  overflow-x: auto;
+  overflow-y: hidden;
+
+  padding: 32px;
+  line-height: 2.1;
+}
+
+.reader-body.vertical h1 {
+  margin-left: 32px;
+  margin-bottom: 0;
+}
+
+.reader-body.vertical p {
+  margin: 0;
+}
+
+.reader-nav {
+  display: flex;
+  justify-content: space-between;
+  padding: 20px;
+}

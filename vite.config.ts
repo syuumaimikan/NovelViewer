@@ -10,6 +10,12 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/syosetu-api/, ""),
       },
+
+      "/syosetu-page": {
+        target: "https://ncode.syosetu.com",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/syosetu-page/, ""),
+      },
     },
   },
 });

@@ -10,32 +10,63 @@ import {
   IonButton,
   IonIcon,
   IonBadge,
+  IonProgressBar,
+  IonToast,
 } from "@ionic/react";
-import { trashOutline, bookOutline } from "ionicons/icons";
-import { useEffect, useState } from "react";
+
 import {
-  getLibrary,
-  removeFromLibrary,
-  Novel,
-  addHistory,
-} from "../data/novelstore";
+  bookOutline,
+  cloudDownloadOutline,
+  readerOutline,
+  openOutline,
+} from "ionicons/icons";
+
+import { useEffect, useState } from "react";
+import { useHistory } from "react-router";
+import { getNovels, NovelInfo } from "../data/novelDB";
+import { downloadFullNovel } from "../data/syosetuApi";
 import "./Tab1.css";
 
 const Tab1: React.FC = () => {
-  const [library, setLibrary] = useState<Novel[]>([]);
+  const [library, setLibrary] = useState<NovelInfo[]>([]);
+  const [downloadingNcode, setDownloadingNcode] = useState("");
+  const [progress, setProgress] = useState(0);
+  const [toast, setToast] = useState("");
+  const history = useHistory();
 
-  useEffect(() => {
-    setLibrary(getLibrary());
-  }, []);
-
-  const deleteNovel = (ncode: string) => {
-    removeFromLibrary(ncode);
-    setLibrary(getLibrary());
+  const loadLibrary = async () => {
+    setLibrary(await getNovels());
   };
 
-  const openNovel = (novel: Novel) => {
-    addHistory(novel);
-    alert(`${novel.title}\n\nここにリーダー画面を作成します。`);
+  useEffect(() => {
+    loadLibrary();
+  }, []);
+
+  const readOffline = (ncode: string) => {
+    history.push(`/reader/${ncode}`);
+  };
+
+  const readOnline = (ncode: string) => {
+    window.open(`https://ncode.syosetu.com/${ncode.toLowerCase()}/`, "_blank");
+  };
+
+  const downloadNovel = async (novel: NovelInfo) => {
+    try {
+      setDownloadingNcode(novel.ncode);
+      setProgress(0);
+
+      await downloadFullNovel(novel, (current, total) => {
+        setProgress(current / total);
+      });
+
+      setToast("全話ダウンロードしました");
+      await loadLibrary();
+    } catch {
+      setToast("ダウンロードに失敗しました");
+    } finally {
+      setDownloadingNcode("");
+      setProgress(0);
+    }
   };
 
   return (
@@ -49,35 +80,73 @@ const Tab1: React.FC = () => {
       <IonContent fullscreen className="library-page">
         <div className="page-title">
           <h1>ライブラリ</h1>
-          <p>オフライン保存した小説</p>
+          <p>保存した小説</p>
         </div>
 
         <IonList className="custom-list">
           {library.map((novel) => (
-            <IonItem key={novel.ncode} className="custom-item" lines="none">
+            <IonItem key={novel.ncode} className="library-card" lines="none">
               <IonIcon icon={bookOutline} slot="start" />
 
-              <IonLabel onClick={() => openNovel(novel)}>
+              <IonLabel>
                 <h2>{novel.title}</h2>
                 <p>
-                  {novel.writer}・{novel.progress ?? 0}% 読了
+                  {novel.writer}・{novel.general_all_no}話・
+                  {novel.downloaded ? "DL済み" : "未DL"}
                 </p>
+
+                {downloadingNcode === novel.ncode && (
+                  <IonProgressBar value={progress} />
+                )}
+
+                <div className="library-actions">
+                  <IonButton
+                    size="small"
+                    fill="outline"
+                    onClick={() => readOnline(novel.ncode)}
+                  >
+                    <IonIcon icon={openOutline} slot="start" />
+                    オンライン
+                  </IonButton>
+
+                  {novel.downloaded ? (
+                    <IonButton
+                      size="small"
+                      onClick={() => readOffline(novel.ncode)}
+                    >
+                      <IonIcon icon={readerOutline} slot="start" />
+                      読む
+                    </IonButton>
+                  ) : (
+                    <IonButton
+                      size="small"
+                      onClick={() => downloadNovel(novel)}
+                      disabled={downloadingNcode === novel.ncode}
+                    >
+                      <IonIcon icon={cloudDownloadOutline} slot="start" />
+                      全話DL
+                    </IonButton>
+                  )}
+                </div>
               </IonLabel>
 
               <IonBadge className="status-badge">
-                {novel.novel_type === 1 ? "短編" : "連載"}
+                {novel.downloaded ? "DL済" : "未DL"}
               </IonBadge>
-
-              <IonButton fill="clear" onClick={() => deleteNovel(novel.ncode)}>
-                <IonIcon icon={trashOutline} />
-              </IonButton>
             </IonItem>
           ))}
         </IonList>
 
         {library.length === 0 && (
-          <p className="empty-text">まだ保存された小説がありません</p>
+          <p className="empty-text">検索画面から小説を追加してください</p>
         )}
+
+        <IonToast
+          isOpen={toast !== ""}
+          message={toast}
+          duration={1600}
+          onDidDismiss={() => setToast("")}
+        />
       </IonContent>
     </IonPage>
   );
