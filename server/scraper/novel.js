@@ -41,7 +41,7 @@ async function getNovelInfoMany(ncodes) {
 async function searchNovels(query) {
   const params = new URLSearchParams({
     out: "json",
-    lim: query.lim || "30",
+    lim: query.lim || "100",
     order: query.order || "hyoka",
     of: "t-w-s-gp-nt-ga-n-k-g"
   });

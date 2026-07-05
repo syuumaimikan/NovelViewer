@@ -39,7 +39,7 @@ async function getRanking(type) {
     }
   });
 
-  return await getNovelInfoMany(ncodes.slice(0, 30));
+  return await getNovelInfoMany(ncodes.slice(0, 100));
 }
 
 module.exports = {

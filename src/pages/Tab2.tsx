@@ -70,7 +70,7 @@ const Tab2: React.FC = () => {
 
     try {
       const params: Record<string, string> = {
-        lim: "30",
+        lim: "100",
         order: "hyoka",
       };
 
