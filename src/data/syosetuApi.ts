@@ -1,27 +1,12 @@
-import { Episode, NovelInfo, saveEpisode } from "./novelDB";
-
-const API_BASE = "/syosetu-api";
-
-function decodeHtml(text: string) {
-  const textarea = document.createElement("textarea");
-  textarea.innerHTML = text;
-  return textarea.value;
-}
+import { Episode, NovelInfo, saveEpisode } from "./novelDb";
+import {
+  getNovelInfo,
+  getEpisodeOnline,
+  downloadNovelAllFromServer,
+} from "../api/novelApi";
 
 export async function fetchNovelInfo(ncode: string): Promise<NovelInfo> {
-  const params = new URLSearchParams({
-    out: "json",
-    ncode,
-    of: "t-w-s-ga-n-k-g",
-  });
-
-  const res = await fetch(`${API_BASE}/novelapi/api/?${params}`);
-  const data = await res.json();
-  const item = data[1];
-
-  if (!item) {
-    throw new Error("小説が見つかりません");
-  }
+  const item = await getNovelInfo(ncode);
 
   return {
     ncode: item.ncode.toLowerCase(),
@@ -38,41 +23,9 @@ export async function fetchNovelInfo(ncode: string): Promise<NovelInfo> {
 
 export async function fetchEpisodeOnline(
   ncode: string,
-  episodeNo: number,
+  episodeNo: number
 ): Promise<Episode> {
-  const key = ncode.toLowerCase();
-
-  const res = await fetch(`/syosetu-page/${key}/${episodeNo}/`);
-  const html = await res.text();
-
-  console.log(html); // 一度確認用
-
-  const doc = new DOMParser().parseFromString(html, "text/html");
-
-  const title =
-    doc.querySelector(".p-novel__title")?.textContent?.trim() ||
-    doc.querySelector(".novel_subtitle")?.textContent?.trim() ||
-    `第${episodeNo}話`;
-
-  const bodyElement =
-    doc.querySelector(".js-novel-text") ||
-    doc.querySelector(".p-novel__body") ||
-    doc.querySelector("#novel_honbun");
-
-  const body =
-    bodyElement?.textContent
-      ?.replace(/\r/g, "")
-      .replace(/\n{3,}/g, "\n\n")
-      .trim() ?? "";
-
-  return {
-    id: `${key}-${episodeNo}`,
-    ncode: key,
-    episodeNo,
-    title,
-    body,
-    downloadedAt: "",
-  };
+  return await getEpisodeOnline(ncode, episodeNo);
 }
 
 export async function downloadEpisode(ncode: string, episodeNo: number) {
@@ -88,10 +41,17 @@ export async function downloadEpisode(ncode: string, episodeNo: number) {
 
 export async function downloadAllEpisodes(
   novel: NovelInfo,
-  onProgress?: (current: number, total: number) => void,
+  onProgress?: (current: number, total: number) => void
 ) {
-  for (let i = 1; i <= novel.general_all_no; i++) {
-    await downloadEpisode(novel.ncode, i);
-    onProgress?.(i, novel.general_all_no);
+  const data = await downloadNovelAllFromServer(novel.ncode);
+  const episodes: Episode[] = data.episodes ?? [];
+
+  for (let i = 0; i < episodes.length; i++) {
+    await saveEpisode({
+      ...episodes[i],
+      downloadedAt: new Date().toISOString(),
+    });
+
+    onProgress?.(i + 1, episodes.length);
   }
 }

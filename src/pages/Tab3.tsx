@@ -12,7 +12,7 @@ import {
 } from "@ionic/react";
 import { timeOutline, trashOutline } from "ionicons/icons";
 import { useEffect, useState } from "react";
-import { getHistory, Novel } from "../data/novelstore";
+import { getHistory, Novel } from "../data/novelStore";
 import "./Tab3.css";
 
 const Tab3: React.FC = () => {

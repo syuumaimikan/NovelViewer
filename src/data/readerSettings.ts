@@ -2,7 +2,6 @@ export type ReaderSettings = {
   pageMode: "scroll" | "page";
   tapLeftAction: "prev" | "none";
   tapRightAction: "next" | "none";
-
   allowTextSelection: boolean;
 
   fontFamily: string;
@@ -10,9 +9,10 @@ export type ReaderSettings = {
   fontSize: number;
   lineHeight: number;
   letterSpacing: number;
-  brightness: number;
 
+  brightness: number;
   hideSystemBars: boolean;
+
   showRuby: boolean;
   showImages: boolean;
   showPageBreak: boolean;
@@ -30,17 +30,18 @@ export const defaultReaderSettings: ReaderSettings = {
   pageMode: "scroll",
   tapLeftAction: "prev",
   tapRightAction: "next",
-
   allowTextSelection: true,
 
   fontFamily: "system-ui",
   customFontName: "",
+
   fontSize: 24,
   lineHeight: 2.1,
   letterSpacing: 0,
-  brightness: 1,
 
+  brightness: 1,
   hideSystemBars: false,
+
   showRuby: true,
   showImages: true,
   showPageBreak: true,
@@ -58,7 +59,7 @@ const KEY = "reader_settings";
 
 export function loadReaderSettings(): ReaderSettings {
   return JSON.parse(
-    localStorage.getItem(KEY) || JSON.stringify(defaultReaderSettings),
+    localStorage.getItem(KEY) || JSON.stringify(defaultReaderSettings)
   );
 }
 

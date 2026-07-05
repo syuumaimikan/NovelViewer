@@ -19,7 +19,7 @@ import {
 
 import { useEffect, useState } from "react";
 import { useHistory, useParams } from "react-router";
-import { addNovelToLibrary, getNovel, NovelInfo } from "../data/novelDB";
+import { addNovelToLibrary, getNovel, NovelInfo } from "../data/novelDb";
 import { fetchNovelInfo } from "../data/syosetuApi";
 import "./NovelDetailPage.css";
 
@@ -48,7 +48,6 @@ const NovelDetailPage: React.FC = () => {
 
   const addLibrary = async () => {
     if (!novel) return;
-
     await addNovelToLibrary(novel);
     setToast("ライブラリに追加しました");
   };
@@ -81,6 +80,7 @@ const NovelDetailPage: React.FC = () => {
             <IonButton>
               <IonIcon icon={shareSocialOutline} />
             </IonButton>
+
             <IonButton>
               <IonIcon icon={ellipsisVerticalOutline} />
             </IonButton>
@@ -106,7 +106,7 @@ const NovelDetailPage: React.FC = () => {
             {(novel.keyword ?? "")
               .split(" ")
               .filter(Boolean)
-              .slice(0, 6)
+              .slice(0, 8)
               .map((k) => (
                 <span key={k}>{k}</span>
               ))}

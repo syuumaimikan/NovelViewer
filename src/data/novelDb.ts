@@ -36,6 +36,7 @@ const dbPromise = openDB("NovelReaderDB", 1, {
 
 export async function saveNovel(novel: NovelInfo) {
   const db = await dbPromise;
+
   await db.put("novels", {
     ...novel,
     ncode: novel.ncode.toLowerCase(),
@@ -56,7 +57,18 @@ export async function addNovelToLibrary(novel: NovelInfo) {
     lastReadEpisode: 1,
   });
 }
+export async function deleteNovel(ncode: string) {
+  const db = await dbPromise;
+  const key = ncode.toLowerCase();
 
+  await db.delete("novels", key);
+
+  const episodes = await getEpisodes(key);
+
+  for (const ep of episodes) {
+    await db.delete("episodes", ep.id);
+  }
+}
 export async function getNovel(ncode: string): Promise<NovelInfo | undefined> {
   const db = await dbPromise;
   return await db.get("novels", ncode.toLowerCase());
@@ -82,6 +94,7 @@ export async function getEpisode(
 
 export async function getEpisodes(ncode: string): Promise<Episode[]> {
   const db = await dbPromise;
+
   const eps = await db.getAllFromIndex(
     "episodes",
     "ncode",

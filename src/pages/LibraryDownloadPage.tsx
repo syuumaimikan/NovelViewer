@@ -17,7 +17,7 @@ import {
 import { arrowBackOutline, menuOutline } from "ionicons/icons";
 import { useEffect, useState } from "react";
 import { useHistory, useParams } from "react-router";
-import { getNovel, isEpisodeDownloaded, NovelInfo } from "../data/novelDB";
+import { getNovel, isEpisodeDownloaded, NovelInfo } from "../data/novelDb";
 import { downloadEpisode } from "../data/syosetuApi";
 import "./LibraryDownloadPage.css";
 

@@ -16,17 +16,25 @@ import {
   bookOutline,
   cloudDownloadOutline,
   readerOutline,
+  trashOutline,
 } from "ionicons/icons";
 
 import { useEffect, useState } from "react";
 import { useHistory } from "react-router";
-import { getNovels, NovelInfo } from "../data/novelDB";
+import { getNovels, NovelInfo, deleteNovel } from "../data/novelDb";
 import "./Tab1.css";
 
 const Tab1: React.FC = () => {
   const [library, setLibrary] = useState<NovelInfo[]>([]);
   const history = useHistory();
+  const removeNovel = async (ncode: string) => {
+    const ok = window.confirm("ライブラリから削除しますか？");
 
+    if (!ok) return;
+
+    await deleteNovel(ncode);
+    setLibrary(await getNovels());
+  };
   useEffect(() => {
     getNovels().then(setLibrary);
   }, []);
@@ -80,9 +88,18 @@ const Tab1: React.FC = () => {
                     <IonIcon icon={cloudDownloadOutline} slot="start" />
                     DL管理
                   </IonButton>
+
+                  <IonButton
+                    size="small"
+                    fill="clear"
+                    color="danger"
+                    onClick={() => removeNovel(novel.ncode)}
+                  >
+                    <IonIcon icon={trashOutline} slot="start" />
+                    削除
+                  </IonButton>
                 </div>
               </IonLabel>
-
               <IonBadge className="status-badge">保存</IonBadge>
             </IonItem>
           ))}

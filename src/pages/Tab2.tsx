@@ -15,14 +15,28 @@ import {
   IonChip,
   IonToast,
 } from "@ionic/react";
-import { useHistory } from "react-router";
-import { searchOutline, filterOutline, downloadOutline } from "ionicons/icons";
+
+import { searchOutline, filterOutline } from "ionicons/icons";
 import { useEffect, useState } from "react";
-import { addToLibrary, addHistory, Novel } from "../data/novelstore";
-import { addNovelToLibrary } from "../data/novelDB";
+import { useHistory } from "react-router";
+import { getRanking, searchNovels } from "../api/novelApi";
 import "./Tab2.css";
 
+type Novel = {
+  title: string;
+  writer: string;
+  story?: string;
+  genre?: number;
+  keyword?: string;
+  ncode: string;
+  global_point?: number;
+  novel_type?: number;
+  general_all_no?: number;
+};
+
 const Tab2: React.FC = () => {
+  const history = useHistory();
+
   const [open, setOpen] = useState(false);
   const [range, setRange] = useState("daily");
 
@@ -36,91 +50,13 @@ const Tab2: React.FC = () => {
   const [novels, setNovels] = useState<Novel[]>([]);
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState("");
-  const history = useHistory();
-  const getRankingType = (range: string) => {
-    const d = new Date();
-    d.setDate(d.getDate() - 1);
 
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, "0");
-    const day = String(d.getDate()).padStart(2, "0");
-
-    const date = `${y}${m}${day}`;
-
-    if (range === "daily") return `${date}-d`;
-    if (range === "weekly") return `${date}-w`;
-    if (range === "monthly") return `${date}-m`;
-    if (range === "quarter") return `${date}-q`;
-
-    return "";
-  };
-
-  const fetchNovelDetailsByNcodes = async (ncodes: string[]) => {
-    const params = new URLSearchParams({
-      out: "json",
-      lim: "30",
-      ncode: ncodes.join("-"),
-      of: "t-w-s-gp-nt-ga-n-k",
-    });
-
-    const res = await fetch(`/syosetu-api/novelapi/api/?${params.toString()}`);
-    const text = await res.text();
-
-    if (!res.ok || text.startsWith("Error")) {
-      console.error(text);
-      throw new Error("詳細取得に失敗しました");
-    }
-
-    return JSON.parse(text).slice(1);
-  };
-
-  const searchNovels = async () => {
+  const fetchRanking = async (type: string) => {
     setLoading(true);
 
     try {
-      if (range === "total") {
-        const params = new URLSearchParams({
-          out: "json",
-          lim: "30",
-          order: "hyoka",
-          of: "t-w-s-gp-nt-ga-n-k",
-        });
-
-        const res = await fetch(
-          `/syosetu-api/novelapi/api/?${params.toString()}`,
-        );
-        const data = await res.json();
-
-        setNovels(data.slice(1));
-        return;
-      }
-
-      const rtype = getRankingType(range);
-
-      const rankParams = new URLSearchParams({
-        out: "json",
-        rtype,
-      });
-
-      const rankRes = await fetch(
-        `/syosetu-api/rank/rankget/?${rankParams.toString()}`,
-      );
-
-      const rankText = await rankRes.text();
-
-      if (!rankRes.ok || rankText.startsWith("Error")) {
-        console.error(rankText);
-        setToast("ランキング取得に失敗しました");
-        return;
-      }
-
-      const rankData = JSON.parse(rankText);
-
-      const ncodes = rankData.slice(0, 30).map((item: any) => item.ncode);
-
-      const details = await fetchNovelDetailsByNcodes(ncodes);
-
-      setNovels(details);
+      const data = await getRanking(type);
+      setNovels(data);
     } catch (e) {
       console.error(e);
       setToast("ランキング取得に失敗しました");
@@ -129,32 +65,36 @@ const Tab2: React.FC = () => {
     }
   };
 
-  const addLibrary = async (novel: Novel) => {
-    await addNovelToLibrary({
-      ncode: novel.ncode.toLowerCase(),
-      title: novel.title,
-      writer: novel.writer,
-      story: novel.story,
-      general_all_no: novel.general_all_no ?? 1,
-      downloaded: false,
-      lastReadEpisode: 1,
-    });
+  const searchNovelList = async () => {
+    setLoading(true);
 
-    setToast("ライブラリに追加しました");
-  };
+    try {
+      const params: Record<string, string> = {
+        lim: "30",
+        order: "hyoka",
+      };
 
-  const downloadNovel = (novel: Novel) => {
-    addToLibrary(novel);
-    setToast("ライブラリに保存しました");
-  };
+      if (keyword.trim()) params.word = keyword;
+      if (genre !== "none") params.genre = genre;
+      if (type === "short") params.type = "t";
+      if (type === "serial") params.type = "r";
+      if (minLength) params.minlen = minLength;
+      if (maxLength) params.maxlen = maxLength;
+      if (completed === "completed") params.isend = "1";
 
-  const openNovel = (novel: Novel) => {
-    addHistory(novel);
-    window.open(`https://ncode.syosetu.com/${novel.ncode.toLowerCase()}/`);
+      const data = await searchNovels(params);
+      setNovels(data);
+      setOpen(false);
+    } catch (e) {
+      console.error(e);
+      setToast("検索に失敗しました");
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
-    searchNovels();
+    fetchRanking(range);
   }, [range]);
 
   return (
@@ -167,6 +107,7 @@ const Tab2: React.FC = () => {
             <IonButton fill="clear" onClick={() => setOpen(true)}>
               <IonIcon icon={searchOutline} />
             </IonButton>
+
             <IonButton fill="clear" onClick={() => setOpen(true)}>
               <IonIcon icon={filterOutline} />
             </IonButton>
@@ -175,24 +116,25 @@ const Tab2: React.FC = () => {
 
         <IonSegment
           value={range}
-          onIonChange={(e) => {
-            const value = String(e.detail.value);
-            setRange(value);
-          }}
+          onIonChange={(e) => setRange(String(e.detail.value))}
           className="ranking-tabs"
         >
           <IonSegmentButton value="daily">
             <IonLabel>日間</IonLabel>
           </IonSegmentButton>
+
           <IonSegmentButton value="weekly">
             <IonLabel>週間</IonLabel>
           </IonSegmentButton>
+
           <IonSegmentButton value="monthly">
             <IonLabel>月間</IonLabel>
           </IonSegmentButton>
+
           <IonSegmentButton value="quarter">
             <IonLabel>四半期</IonLabel>
           </IonSegmentButton>
+
           <IonSegmentButton value="total">
             <IonLabel>累計</IonLabel>
           </IonSegmentButton>
@@ -203,15 +145,16 @@ const Tab2: React.FC = () => {
 
           {!loading &&
             novels.map((novel, index) => (
-              <div className="novel-row" key={novel.ncode}>
+              <div
+                className="novel-row"
+                key={novel.ncode}
+                onClick={() =>
+                  history.push(`/novel/${novel.ncode.toLowerCase()}`)
+                }
+              >
                 <div className="rank-number">{index + 1}</div>
 
-                <div
-                  className="novel-main"
-                  onClick={() =>
-                    history.push(`/novel/${novel.ncode.toLowerCase()}`)
-                  }
-                >
+                <div className="novel-main">
                   <h2>{novel.title}</h2>
                   <p>
                     {novel.writer}・{getGenreName(novel.genre)}・
@@ -219,15 +162,9 @@ const Tab2: React.FC = () => {
                   </p>
                 </div>
 
-                <div className="right-area">
-                  <span className="novel-badge">
-                    {novel.novel_type === 1 ? "短編" : "連載"}
-                  </span>
-
-                  <IonButton fill="clear" onClick={() => downloadNovel(novel)}>
-                    <IonIcon icon={downloadOutline} />
-                  </IonButton>
-                </div>
+                <span className="novel-badge">
+                  {novel.novel_type === 1 ? "短編" : "連載"}
+                </span>
               </div>
             ))}
         </div>
@@ -260,18 +197,10 @@ const Tab2: React.FC = () => {
                 >
                   <IonSelectOption value="none">指定なし</IonSelectOption>
                   <IonSelectOption value="101">異世界〔恋愛〕</IonSelectOption>
-                  <IonSelectOption value="102">
-                    現実世界〔恋愛〕
-                  </IonSelectOption>
-                  <IonSelectOption value="201">
-                    ハイファンタジー
-                  </IonSelectOption>
-                  <IonSelectOption value="202">
-                    ローファンタジー
-                  </IonSelectOption>
-                  <IonSelectOption value="302">
-                    ヒューマンドラマ
-                  </IonSelectOption>
+                  <IonSelectOption value="102">現実世界〔恋愛〕</IonSelectOption>
+                  <IonSelectOption value="201">ハイファンタジー</IonSelectOption>
+                  <IonSelectOption value="202">ローファンタジー</IonSelectOption>
+                  <IonSelectOption value="302">ヒューマンドラマ</IonSelectOption>
                   <IonSelectOption value="304">推理</IonSelectOption>
                   <IonSelectOption value="305">ホラー</IonSelectOption>
                   <IonSelectOption value="306">アクション</IonSelectOption>
@@ -282,25 +211,34 @@ const Tab2: React.FC = () => {
 
             <div className="section">
               <p className="section-title">種別</p>
+
               <div className="chip-row">
-                {[
-                  ["all", "すべて"],
-                  ["short", "短編"],
-                  ["serial", "連載"],
-                ].map(([value, label]) => (
-                  <IonChip
-                    key={value}
-                    className={type === value ? "active-chip" : ""}
-                    onClick={() => setType(value)}
-                  >
-                    {label}
-                  </IonChip>
-                ))}
+                <IonChip
+                  className={type === "all" ? "active-chip" : ""}
+                  onClick={() => setType("all")}
+                >
+                  すべて
+                </IonChip>
+
+                <IonChip
+                  className={type === "short" ? "active-chip" : ""}
+                  onClick={() => setType("short")}
+                >
+                  短編
+                </IonChip>
+
+                <IonChip
+                  className={type === "serial" ? "active-chip" : ""}
+                  onClick={() => setType("serial")}
+                >
+                  連載
+                </IonChip>
               </div>
             </div>
 
             <div className="section">
               <p className="section-title">完結区分</p>
+
               <div className="chip-row">
                 <IonChip
                   className={completed === "all" ? "active-chip" : ""}
@@ -308,6 +246,7 @@ const Tab2: React.FC = () => {
                 >
                   すべて
                 </IonChip>
+
                 <IonChip
                   className={completed === "completed" ? "active-chip" : ""}
                   onClick={() => setCompleted("completed")}
@@ -319,11 +258,13 @@ const Tab2: React.FC = () => {
 
             <div className="section">
               <p className="section-title">文字数</p>
+
               <IonSearchbar
                 placeholder="最小文字数"
                 value={minLength}
                 onIonInput={(e) => setMinLength(e.detail.value ?? "")}
               />
+
               <IonSearchbar
                 placeholder="最大文字数"
                 value={maxLength}
@@ -338,7 +279,7 @@ const Tab2: React.FC = () => {
             <IonButton
               expand="block"
               className="search-button"
-              onClick={searchNovels}
+              onClick={searchNovelList}
             >
               <IonIcon icon={searchOutline} slot="start" />
               検索する
@@ -370,7 +311,7 @@ const getGenreName = (genre?: number) => {
     307: "コメディー",
   };
 
-  return genre ? (genres[genre] ?? "その他") : "その他";
+  return genre ? genres[genre] ?? "その他" : "その他";
 };
 
 export default Tab2;

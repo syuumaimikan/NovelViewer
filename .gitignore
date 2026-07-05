@@ -31,3 +31,4 @@ yarn-error.log*
 .eslintcache
 
 /android
+/server/node_modules

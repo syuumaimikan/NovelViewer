@@ -12,16 +12,18 @@ import {
 import { arrowBackOutline } from "ionicons/icons";
 import { useEffect, useState } from "react";
 import { useHistory, useParams } from "react-router";
+
 import {
   Episode,
   getEpisode,
   getNovel,
   NovelInfo,
   updateLastRead,
-} from "../data/novelDB";
+} from "../data/novelDb";
+
 import { fetchEpisodeOnline, fetchNovelInfo } from "../data/syosetuApi";
-import "./ReaderPage.css";
 import { loadReaderSettings } from "../data/readerSettings";
+import "./ReaderPage.css";
 
 const ReaderPage: React.FC = () => {
   const { ncode, episodeNo } = useParams<{
@@ -30,12 +32,12 @@ const ReaderPage: React.FC = () => {
   }>();
 
   const history = useHistory();
+  const epNo = Number(episodeNo);
 
   const [novel, setNovel] = useState<NovelInfo | null>(null);
   const [episode, setEpisode] = useState<Episode | null>(null);
   const [loading, setLoading] = useState(true);
-  const [readerSettings, setReaderSettings] = useState(loadReaderSettings());
-  const epNo = Number(episodeNo);
+  const [readerSettings] = useState(loadReaderSettings());
 
   useEffect(() => {
     const load = async () => {
@@ -95,6 +97,27 @@ const ReaderPage: React.FC = () => {
 
       <IonContent fullscreen className="reader-page">
         <div
+          className="tap-left"
+          onClick={() => {
+            if (readerSettings.tapLeftAction === "prev" && epNo > 1) {
+              moveEpisode(epNo - 1);
+            }
+          }}
+        />
+
+        <div
+          className="tap-right"
+          onClick={() => {
+            if (
+              readerSettings.tapRightAction === "next" &&
+              epNo < novel.general_all_no
+            ) {
+              moveEpisode(epNo + 1);
+            }
+          }}
+        />
+
+        <div
           className={`reader-body ${
             readerSettings.pageMode === "page" ? "page-mode" : "scroll-mode"
           } ${
@@ -114,7 +137,12 @@ const ReaderPage: React.FC = () => {
           }}
         >
           <h1>{episode.title}</h1>
-          <p>{episode.body}</p>
+
+          {episode.body ? (
+            <p>{episode.body}</p>
+          ) : (
+            <p className="empty-text">本文を取得できませんでした</p>
+          )}
         </div>
 
         <div className="reader-page-buttons">
